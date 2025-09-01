@@ -26,21 +26,10 @@ export const AuthProvider = ({ children }) => {
         try {
           // Verify token and get user info with permissions
           const response = await authService.verifyToken();
-          // console.log(extractPermissions(response.data.user.menus || []))
-          /*
-          if (response.status_code == 200) {
-            setUser(response.data.user.username);
-            // setUserPermissions(response.data.user.menus || []);
-            setUserPermissions(extractPermissions(response.data.user.menus || []));
-            setUserMenus(response.data.user.menus || []);
 
-            setIsAuthenticated(true);
-          } 
-          */
-          
           if (response.status_code == 200) {
             const menus = response.data.user.menus || [];
-            setUser(response.data.user.username);
+            setUser(response.data.user);
             setUserMenus(menus);
             setUserPermissions(extractPermissionsByMenu(menus));
             setIsAuthenticated(true);
@@ -49,15 +38,12 @@ export const AuthProvider = ({ children }) => {
           else {
             // Token invalid, clear storage
             localStorage.removeItem('access_token');
-            // localStorage.removeItem('refresh_token');
-            // localStorage.removeItem('user');
+
           }
         } catch (error) {
           console.error('Token verification failed:', error);
           // Token invalid, clear storage
           localStorage.removeItem('access_token');
-          // localStorage.removeItem('refresh_token');
-          // localStorage.removeItem('user');
         }
       }
       setLoading(false);
@@ -79,7 +65,7 @@ export const AuthProvider = ({ children }) => {
         const userData = verifyResponse.data.user;
         const menus = userData.menus || [];
 
-        setUser(userData.username);
+        setUser(userData); 
         setUserMenus(menus);
         setUserPermissions(extractPermissionsByMenu(menus));
         setIsAuthenticated(true);

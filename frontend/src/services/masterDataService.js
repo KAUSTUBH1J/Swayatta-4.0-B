@@ -234,6 +234,12 @@ class MasterDataService {
   async getRolePermissionsNested(params) {
     return this.getList('v1/role_permissions/role-permissions/nested', params);
   }
+
+  // In services/masterDataService.js
+  async createRolePermission(payload) {
+    return await api.post("/v1/role_permissions/", payload);
+  }
+
 }
 
 export default new MasterDataService();

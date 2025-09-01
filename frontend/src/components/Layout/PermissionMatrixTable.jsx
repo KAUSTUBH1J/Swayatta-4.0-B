@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { Check, X } from "lucide-react";
 
-const PermissionMatrixTable = ({ data, headline, loading }) => {
+const PermissionMatrixTable = ({ data, headline, loading, selectedRole }) => {
+  // Collect all permissions across menus
   const PERMISSIONS = useMemo(() => {
     const perms = new Set();
     data.forEach((role) =>
@@ -14,22 +15,11 @@ const PermissionMatrixTable = ({ data, headline, loading }) => {
     return Array.from(perms);
   }, [data]);
 
-  const flattenedRows = useMemo(() => {
-    const rows = [];
-    data.forEach((role) => {
-      role.role_modules.forEach((mod) => {
-        mod.module_menus.forEach((menu) => {
-          rows.push({
-            role: role.role_name,
-            module: mod.module_name,
-            menu: menu.menu_name,
-            permissions: menu.menu_permissions,
-          });
-        });
-      });
-    });
-    return rows;
-  }, [data]);
+  // Filter by selected role
+  const filteredData = useMemo(() => {
+    if (!selectedRole) return [];
+    return data.filter((role) => role.role_name === selectedRole);
+  }, [data, selectedRole]);
 
   return (
     <div>
@@ -57,7 +47,7 @@ const PermissionMatrixTable = ({ data, headline, loading }) => {
                   </td>
                 </tr>
               ))
-            ) : flattenedRows.length === 0 ? (
+            ) : filteredData.length === 0 ? (
               <tr>
                 <td
                   colSpan={3 + PERMISSIONS.length}
@@ -67,22 +57,59 @@ const PermissionMatrixTable = ({ data, headline, loading }) => {
                 </td>
               </tr>
             ) : (
-              flattenedRows.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="p-2 border">{row.role}</td>
-                  <td className="p-2 border">{row.module}</td>
-                  <td className="p-2 border">{row.menu}</td>
-                  {PERMISSIONS.map((p) => (
-                    <td key={p} className="text-center border">
-                      {row.permissions.includes(p) ? (
-                        <Check className="text-green-600 inline" size={16} />
-                      ) : (
-                        <X className="text-red-600 inline" size={16} />
+              filteredData.map((role) => {
+                const roleRowSpan = role.role_modules.reduce(
+                  (sum, mod) => sum + mod.module_menus.length,
+                  0
+                );
+
+                return role.role_modules.map((mod, modIndex) => {
+                  const moduleRowSpan = mod.module_menus.length;
+
+                  return mod.module_menus.map((menu, menuIndex) => (
+                    <tr
+                      key={menu.rp_id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                    >
+                      {/* Render Role cell only once with rowspan */}
+                      {modIndex === 0 && menuIndex === 0 && (
+                        <td
+                          className="p-2 border align-top font-semibold"
+                          rowSpan={roleRowSpan}
+                          style={{alignContent: "center", textAlign: "center"}}
+                        >
+                          {role.role_name}
+                        </td>
                       )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+
+                      {/* Render Module cell only once per module with rowspan */}
+                      {menuIndex === 0 && (
+                        <td
+                          className="p-2 border align-top"
+                          rowSpan={moduleRowSpan}
+                          style={{alignContent: "center", textAlign: "center"}}
+                        >
+                          {mod.module_name}
+                        </td>
+                      )}
+
+                      {/* Menu */}
+                      <td className="p-2 border">{menu.menu_name}</td>
+
+                      {/* Permissions */}
+                      {PERMISSIONS.map((p) => (
+                        <td key={p} className="text-center border">
+                          {menu.menu_permissions.includes(p) ? (
+                            <Check className="text-green-600 inline" size={16} />
+                          ) : (
+                            <X className="text-red-600 inline" size={16} />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ));
+                });
+              })
             )}
           </tbody>
         </table>
